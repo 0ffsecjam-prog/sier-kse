@@ -41,16 +41,25 @@ cp .env.example .env.docker
 openssl rand -base64 32   # → NEXTAUTH_SECRET y AUTH_SECRET
 openssl rand -hex 32      # → ENCRYPTION_KEY
 
-# 3. Levantar la stack (build + db + migraciones + seed + Next)
-docker compose --env-file .env.docker up --build
+# 3. Levantar todo: DB + app + migraciones + seed
+docker compose up --build
 ```
 
-A los pocos segundos:
+Eso es todo. No hace falta correr Postgres aparte: el `docker compose up`
+crea dos containers (`sier-kse-db` y `sier-kse-app`) en una red interna
+privada, espera a que Postgres pase el healthcheck (`pg_isready`), y la
+app corre automáticamente:
 
-- Postgres queda corriendo en el container `sier-kse-db`
-- El container `sier-kse-app` corre `prisma migrate deploy`, hace el seed inicial (deportes + admin) y arranca Next en `0.0.0.0:3000`
-- Abrí <http://localhost:3000> (o `http://<ip-del-host>:3000` desde otra máquina en la LAN)
-- Logueate con `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` de tu `.env.docker`
+1. `prisma migrate deploy` — crea las tablas
+2. `prisma/seed.ts` — siembra los deportes base y el usuario admin
+3. `next start` — sirve en `0.0.0.0:3000`
+
+Abrí <http://localhost:3000> (o `http://<ip-del-host>:3000` desde otra
+máquina en la LAN) y logueate con `INITIAL_ADMIN_EMAIL` /
+`INITIAL_ADMIN_PASSWORD` de tu `.env.docker`.
+
+Para correr en background: `docker compose up -d --build`.
+Para parar: `docker compose down` (los datos persisten en `./data/`).
 
 ## Acceso por red
 
