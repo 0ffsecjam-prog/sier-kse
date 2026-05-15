@@ -34,32 +34,38 @@ Sistema interno de gestión para una empresa que instala cámaras en canchas dep
 ## Primera puesta en marcha
 
 ```bash
-# 1. Copiar la plantilla de env y completar secrets
-cp .env.example .env.docker
-
-# 2. Generar los secrets que faltan (y editar .env.docker para reemplazar los placeholders)
-openssl rand -base64 32   # → NEXTAUTH_SECRET y AUTH_SECRET
-openssl rand -hex 32      # → ENCRYPTION_KEY
-
-# 3. Levantar todo: DB + app + migraciones + seed
-docker compose up --build
+./start.sh
 ```
 
-Eso es todo. No hace falta correr Postgres aparte: el `docker compose up`
-crea dos containers (`sier-kse-db` y `sier-kse-app`) en una red interna
-privada, espera a que Postgres pase el healthcheck (`pg_isready`), y la
-app corre automáticamente:
+Eso es todo. La primera vez `start.sh` corre `scripts/bootstrap.sh`, que
+genera `.env.docker` con secrets aleatorios (Postgres, NextAuth,
+encryption key, password de admin) y te imprime las credenciales por
+consola. Después llama a `docker compose up --build`.
 
-1. `prisma migrate deploy` — crea las tablas
-2. `prisma/seed.ts` — siembra los deportes base y el usuario admin
-3. `next start` — sirve en `0.0.0.0:3000`
+A los pocos segundos vas a ver dos containers corriendo en una red
+interna privada:
 
-Abrí <http://localhost:3000> (o `http://<ip-del-host>:3000` desde otra
-máquina en la LAN) y logueate con `INITIAL_ADMIN_EMAIL` /
-`INITIAL_ADMIN_PASSWORD` de tu `.env.docker`.
+- **`sier-kse-db`** — Postgres 16 con bind mount a `./data/postgres`
+- **`sier-kse-app`** — Next.js que arranca recién cuando Postgres pasa
+  el healthcheck (`pg_isready`). El entrypoint corre `prisma migrate
+  deploy`, después el seed (deportes + admin), y por último `next start`
+  en `0.0.0.0:3000`.
 
-Para correr en background: `docker compose up -d --build`.
-Para parar: `docker compose down` (los datos persisten en `./data/`).
+Abrí <http://localhost:3000> (o `http://<ip-del-host>:3000` desde la LAN)
+y logueate con el email/password que te imprimió el bootstrap (también
+quedan en `.env.docker`, gitignored).
+
+Las siguientes veces alcanza con `docker compose up` (o `./start.sh`
+también — es idempotente, no regenera secrets si ya existen).
+
+**Atajos útiles:**
+
+```bash
+./start.sh -d              # background
+docker compose down        # parar (datos persisten en ./data/)
+docker compose logs -f app # ver logs en vivo
+grep INITIAL_ADMIN .env.docker  # recordar el password de admin
+```
 
 ## Acceso por red
 
