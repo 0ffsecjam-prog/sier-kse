@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sier-kse-db
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      # $$ escapes the $ so docker-compose doesn't try to expand at parse time;
+      # the shell inside the container expands it using the env_file vars.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Uncomment for local DB debugging from the host:
+    # ports:
+    #   - "5432:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sier-kse-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    ports:
+      - "0.0.0.0:3000:3000"
+    volumes:
+      - ./data/uploads:/app/data/uploads
