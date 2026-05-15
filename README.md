@@ -37,10 +37,17 @@ Sistema interno de gestión para una empresa que instala cámaras en canchas dep
 ./start.sh
 ```
 
+Si tu instalación de Docker necesita root (Linux sin grupo `docker`):
+
+```bash
+sudo ./start.sh
+```
+
 Eso es todo. La primera vez `start.sh` corre `scripts/bootstrap.sh`, que
 genera `.env.docker` con secrets aleatorios (Postgres, NextAuth,
 encryption key, password de admin) y te imprime las credenciales por
-consola. Después llama a `docker compose up --build`.
+consola. Después llama a Docker Compose (detecta solo si tenés el plugin
+v2 `docker compose` o el legacy `docker-compose` v1).
 
 A los pocos segundos vas a ver dos containers corriendo en una red
 interna privada:
@@ -55,16 +62,16 @@ Abrí <http://localhost:3000> (o `http://<ip-del-host>:3000` desde la LAN)
 y logueate con el email/password que te imprimió el bootstrap (también
 quedan en `.env.docker`, gitignored).
 
-Las siguientes veces alcanza con `docker compose up` (o `./start.sh`
-también — es idempotente, no regenera secrets si ya existen).
+Las siguientes veces `./start.sh` es idempotente — no regenera secrets
+si `.env.docker` ya existe.
 
-**Atajos útiles:**
+**Atajos útiles** (usá `docker compose` o `docker-compose` según tu instalación):
 
 ```bash
-./start.sh -d              # background
-docker compose down        # parar (datos persisten en ./data/)
-docker compose logs -f app # ver logs en vivo
-grep INITIAL_ADMIN .env.docker  # recordar el password de admin
+./start.sh -d                  # background
+docker compose down            # parar (datos persisten en ./data/)
+docker compose logs -f app     # ver logs en vivo
+grep INITIAL_ADMIN .env.docker # recordar el password de admin
 ```
 
 ## Acceso por red
