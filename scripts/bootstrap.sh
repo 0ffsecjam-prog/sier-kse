@@ -5,6 +5,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Aseguramos que existan los directorios bind-mounteados antes que
+# Docker los cree como root con permisos raros.
+mkdir -p data/postgres data/uploads
+
 if [ -f .env.docker ]; then
   echo "[bootstrap] .env.docker ya existe, no toco nada."
   exit 0
