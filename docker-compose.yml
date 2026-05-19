@@ -5,6 +5,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env.docker
+    # PGDATA apunta a un subdirectorio dentro del mount point para que
+    # initdb no se queje si el directorio bind-mounteado tiene archivos
+    # "dot-prefixed" como ./data/postgres/.gitkeep (que mantenemos para
+    # que git trackee el directorio vacío).
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
